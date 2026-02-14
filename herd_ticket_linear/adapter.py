@@ -293,9 +293,6 @@ class LinearTicketAdapter:
         Raises:
             Exception: If update fails or ticket not found.
         """
-        # First get the issue to retrieve its internal ID
-        ticket = self.get(ticket_id)
-
         mutation = """
         mutation UpdateIssue($id: String!, $input: IssueUpdateInput!) {
           issueUpdate(id: $id, input: $input) {
