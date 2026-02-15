@@ -53,7 +53,7 @@ def test_get_ticket(mock_urlopen, adapter):
     mock_response = Mock()
     mock_response.read.return_value = json.dumps({
         "data": {
-            "issueSearch": {
+            "searchIssues": {
                 "nodes": [
                     {
                         "id": "issue-uuid",
@@ -102,7 +102,7 @@ def test_get_ticket_not_found(mock_urlopen, adapter):
     """Test fetching non-existent ticket."""
     mock_response = Mock()
     mock_response.read.return_value = json.dumps({
-        "data": {"issueSearch": {"nodes": []}}
+        "data": {"searchIssues": {"nodes": []}}
     }).encode()
     mock_response.__enter__ = Mock(return_value=mock_response)
     mock_response.__exit__ = Mock(return_value=False)
@@ -176,7 +176,7 @@ def test_update_ticket(mock_urlopen, adapter):
     search_response = Mock()
     search_response.read.return_value = json.dumps({
         "data": {
-            "issueSearch": {
+            "searchIssues": {
                 "nodes": [{"id": "issue-uuid", "identifier": "DBC-123"}]
             }
         }
@@ -218,7 +218,7 @@ def test_transition_ticket(mock_urlopen, adapter):
     get_response = Mock()
     get_response.read.return_value = json.dumps({
         "data": {
-            "issueSearch": {
+            "searchIssues": {
                 "nodes": [
                     {
                         "id": "issue-uuid",
@@ -238,7 +238,7 @@ def test_transition_ticket(mock_urlopen, adapter):
     search_response = Mock()
     search_response.read.return_value = json.dumps({
         "data": {
-            "issueSearch": {
+            "searchIssues": {
                 "nodes": [{"id": "issue-uuid", "identifier": "DBC-123"}]
             }
         }
@@ -276,7 +276,7 @@ def test_transition_with_note(mock_urlopen, adapter):
     get_response = Mock()
     get_response.read.return_value = json.dumps({
         "data": {
-            "issueSearch": {
+            "searchIssues": {
                 "nodes": [
                     {
                         "id": "issue-uuid",
@@ -296,7 +296,7 @@ def test_transition_with_note(mock_urlopen, adapter):
     search_response = Mock()
     search_response.read.return_value = json.dumps({
         "data": {
-            "issueSearch": {
+            "searchIssues": {
                 "nodes": [{"id": "issue-uuid", "identifier": "DBC-123"}]
             }
         }
@@ -320,7 +320,7 @@ def test_transition_with_note(mock_urlopen, adapter):
     search_response2 = Mock()
     search_response2.read.return_value = json.dumps({
         "data": {
-            "issueSearch": {
+            "searchIssues": {
                 "nodes": [{"id": "issue-uuid", "identifier": "DBC-123"}]
             }
         }
@@ -363,7 +363,7 @@ def test_add_comment(mock_urlopen, adapter):
     search_response = Mock()
     search_response.read.return_value = json.dumps({
         "data": {
-            "issueSearch": {
+            "searchIssues": {
                 "nodes": [{"id": "issue-uuid", "identifier": "DBC-123"}]
             }
         }
@@ -400,7 +400,7 @@ def test_list_tickets(mock_urlopen, adapter):
     mock_response = Mock()
     mock_response.read.return_value = json.dumps({
         "data": {
-            "issueSearch": {
+            "searchIssues": {
                 "nodes": [
                     {
                         "id": "issue-1",
@@ -436,7 +436,7 @@ def test_list_tickets(mock_urlopen, adapter):
     # Verify search query
     call_args = mock_urlopen.call_args
     body = json.loads(call_args[0][0].data.decode())
-    assert body["variables"]["query"] == "status:in_progress"
+    assert body["variables"]["term"] == "status:in_progress"
 
 
 @patch("urllib.request.urlopen")
@@ -444,7 +444,7 @@ def test_list_tickets_multiple_filters(mock_urlopen, adapter):
     """Test listing tickets with multiple filters."""
     mock_response = Mock()
     mock_response.read.return_value = json.dumps({
-        "data": {"issueSearch": {"nodes": []}}
+        "data": {"searchIssues": {"nodes": []}}
     }).encode()
     mock_response.__enter__ = Mock(return_value=mock_response)
     mock_response.__exit__ = Mock(return_value=False)
@@ -460,7 +460,7 @@ def test_list_tickets_multiple_filters(mock_urlopen, adapter):
     # Verify all filters are in query
     call_args = mock_urlopen.call_args
     body = json.loads(call_args[0][0].data.decode())
-    query = body["variables"]["query"]
+    query = body["variables"]["term"]
     assert "status:in_progress" in query
     assert "assignee:john" in query
     assert "project:q1-goals" in query

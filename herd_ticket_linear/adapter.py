@@ -85,6 +85,34 @@ class LinearTicketAdapter:
         except urllib.error.URLError as e:
             raise Exception(f"Linear API network error: {e.reason}") from e
 
+    def _get_issue_id(self, ticket_id: str) -> str:
+        """Look up a Linear issue UUID by identifier.
+
+        Args:
+            ticket_id: Linear issue identifier (e.g., 'DBC-120').
+
+        Returns:
+            Linear issue UUID.
+
+        Raises:
+            Exception: If ticket not found.
+        """
+        query = """
+        query SearchIssues($term: String!) {
+          searchIssues(term: $term) {
+            nodes { id identifier }
+          }
+        }
+        """
+        result = self._graphql_request(query, {"term": ticket_id})
+        nodes = result.get("data", {}).get("searchIssues", {}).get("nodes", [])
+
+        for node in nodes:
+            if node.get("identifier") == ticket_id:
+                return node["id"]
+
+        raise Exception(f"Ticket {ticket_id} not found")
+
     def _resolve_state_id(self, status: str) -> str:
         """Resolve a status name to a Linear state UUID.
 
@@ -163,8 +191,8 @@ class LinearTicketAdapter:
             Exception: If ticket not found or API call fails.
         """
         query = """
-        query IssueSearch($query: String!) {
-          issueSearch(query: $query) {
+        query SearchIssues($term: String!) {
+          searchIssues(term: $term) {
             nodes {
               id
               identifier
@@ -200,8 +228,8 @@ class LinearTicketAdapter:
         }
         """
 
-        result = self._graphql_request(query, {"query": ticket_id})
-        nodes = result.get("data", {}).get("issueSearch", {}).get("nodes", [])
+        result = self._graphql_request(query, {"term": ticket_id})
+        nodes = result.get("data", {}).get("searchIssues", {}).get("nodes", [])
 
         # Find exact match on identifier
         for node in nodes:
@@ -323,28 +351,8 @@ class LinearTicketAdapter:
         if "project_id" in fields:
             issue_input["projectId"] = fields["project_id"]
 
-        # Get issue ID from the search result
-        query = """
-        query IssueSearch($query: String!) {
-          issueSearch(query: $query) {
-            nodes {
-              id
-              identifier
-            }
-          }
-        }
-        """
-        result = self._graphql_request(query, {"query": ticket_id})
-        nodes = result.get("data", {}).get("issueSearch", {}).get("nodes", [])
-
-        issue_id = None
-        for node in nodes:
-            if node.get("identifier") == ticket_id:
-                issue_id = node.get("id")
-                break
-
-        if not issue_id:
-            raise Exception(f"Ticket {ticket_id} not found")
+        # Get issue ID from search
+        issue_id = self._get_issue_id(ticket_id)
 
         result = self._graphql_request(
             mutation,
@@ -423,27 +431,7 @@ class LinearTicketAdapter:
             Exception: If comment creation fails.
         """
         # Get issue ID
-        query = """
-        query IssueSearch($query: String!) {
-          issueSearch(query: $query) {
-            nodes {
-              id
-              identifier
-            }
-          }
-        }
-        """
-        result = self._graphql_request(query, {"query": ticket_id})
-        nodes = result.get("data", {}).get("issueSearch", {}).get("nodes", [])
-
-        issue_id = None
-        for node in nodes:
-            if node.get("identifier") == ticket_id:
-                issue_id = node.get("id")
-                break
-
-        if not issue_id:
-            raise Exception(f"Ticket {ticket_id} not found")
+        issue_id = self._get_issue_id(ticket_id)
 
         mutation = """
         mutation CreateComment($input: CommentCreateInput!) {
@@ -494,8 +482,8 @@ class LinearTicketAdapter:
         search_query = " ".join(query_parts) if query_parts else "*"
 
         graphql_query = """
-        query IssueSearch($query: String!) {
-          issueSearch(query: $query) {
+        query SearchIssues($term: String!) {
+          searchIssues(term: $term) {
             nodes {
               id
               identifier
@@ -531,7 +519,7 @@ class LinearTicketAdapter:
         }
         """
 
-        result = self._graphql_request(graphql_query, {"query": search_query})
-        nodes = result.get("data", {}).get("issueSearch", {}).get("nodes", [])
+        result = self._graphql_request(graphql_query, {"term": search_query})
+        nodes = result.get("data", {}).get("searchIssues", {}).get("nodes", [])
 
         return [self._parse_ticket(node) for node in nodes]
