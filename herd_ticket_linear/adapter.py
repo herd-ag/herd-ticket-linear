@@ -29,7 +29,7 @@ class LinearTicketAdapter:
         """Initialize Linear adapter.
 
         Args:
-            api_key: Linear API key (Bearer token).
+            api_key: Linear API key.
             team_id: Default team ID for ticket operations.
             state_mapping: Map logical status names to Linear state UUIDs.
                           Example: {"in_progress": "77631f63-b27b-45a5-8b04-f9f82b4facde"}
@@ -63,7 +63,7 @@ class LinearTicketAdapter:
             LINEAR_API_URL,
             data=data,
             headers={
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": self.api_key,
                 "Content-Type": "application/json",
             },
         )
